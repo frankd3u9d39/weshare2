@@ -1,0 +1,52 @@
+rules_version = '2';
+
+// Weshare Firestore rules. Paste into Firebase console -> Firestore Database -> Rules -> Publish.
+//
+// - Every Weshare install may ADD anonymous transfer stats of exactly the expected shape.
+//   Nobody can change or delete them, and only admins can read them.
+// - An admin is a signed-in account that has a document at admins/{its user id}.
+//   Create those documents by hand in the console; the app can't create them.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    match /transfers_telemetry/{recordId} {
+      allow read: if isAdmin();
+      allow update, delete: if false;
+
+      allow create: if
+        request.resource.data.keys().hasOnly([
+          'transfer_id', 'file_size', 'file_type', 'sender_os', 'receiver_os', 'status',
+          'speed_bytes_sec', 'duration_sec', 'error_message', 'app_version', 'created_at'
+        ])
+        && request.resource.data.keys().hasAll(['transfer_id', 'file_size', 'status', 'created_at'])
+        && request.resource.data.transfer_id is string && request.resource.data.transfer_id.size() <= 120
+        && request.resource.data.file_size is int && request.resource.data.file_size >= 0
+        && request.resource.data.status in ['completed', 'failed']
+        && request.resource.data.created_at is timestamp
+        && request.resource.data.created_at < request.time + duration.value(1, 'd')
+        && (!('file_type' in request.resource.data) || (request.resource.data.file_type is string && request.resource.data.file_type.size() <= 20))
+        && (!('sender_os' in request.resource.data) || (request.resource.data.sender_os is string && request.resource.data.sender_os.size() <= 40))
+        && (!('receiver_os' in request.resource.data) || (request.resource.data.receiver_os is string && request.resource.data.receiver_os.size() <= 40))
+        && (!('speed_bytes_sec' in request.resource.data) || request.resource.data.speed_bytes_sec is number)
+        && (!('duration_sec' in request.resource.data) || request.resource.data.duration_sec is number)
+        && (!('error_message' in request.resource.data) || (request.resource.data.error_message is string && request.resource.data.error_message.size() <= 300))
+        && (!('app_version' in request.resource.data) || (request.resource.data.app_version is string && request.resource.data.app_version.size() <= 20));
+    }
+
+    // Lets the console check "am I an admin?" for the signed-in account only.
+    match /admins/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    // Everything else is closed.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

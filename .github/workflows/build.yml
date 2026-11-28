@@ -1,0 +1,40 @@
+name: Build & Package App
+
+on:
+  push:
+    tags:
+      - 'v*' # Trigger build on version tags (e.g., v1.0.0)
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        # Runs on Windows, Ubuntu (Linux), and macOS VMs in GitHub Cloud
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build App
+        run: npm run build
+
+      - name: Package & Publish App
+        run: npx electron-builder --publish always
+        env:
+          # If building for Mac, Apple Developer Certificates would be configured here
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

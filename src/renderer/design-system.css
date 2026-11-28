@@ -1,0 +1,620 @@
+/* ==========================================================================
+   Weshare design system (matches the landing page)
+   Near-black canvas, hairline cells, square corners, mono labels, one violet
+   accent and solid off-white primary buttons. Loaded after index.css, which
+   holds the older look; these rules sit on top of it.
+   ========================================================================== */
+:root {
+  --bg-base: #121316;
+  --bg-app: #121316;
+  --bg-card: #16171b;
+  --bg-card-hover: #1b1d22;
+  --bg-card-active: #202228;
+
+  --line: #26282e;
+  --line-2: #33363d;
+
+  --primary: #8f7bff;
+  --primary-light: #a99bff;
+  --primary-glow: transparent;
+  --accent: #3fc6de;
+  --accent-light: #6fd6e8;
+  --accent-glow: transparent;
+  --success: #4fcf8a;
+  --success-glow: transparent;
+  --error: #f07a8a;
+  --error-glow: transparent;
+  --warning: #f0b44c;
+
+  --text-primary: #f2f1ee;
+  --text-secondary: #a3a29d;
+  --text-muted: #6f6e6a;
+
+  --glass-border: #26282e;
+  --glass-border-hover: #33363d;
+  --glass-shadow: none;
+
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-title: 'Archivo', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+}
+
+body {
+  background: var(--bg-base);
+  background-image: none;
+  color: var(--text-primary);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-title);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* Square corners and no glow anywhere; real circles opt back in below. */
+*,
+*::before,
+*::after {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+.radar-wave-circle,
+.radar-center-pulse,
+.pulse-indicator,
+.status-dot-pulse,
+.onboarding-dot,
+.round {
+  border-radius: 999px !important;
+}
+
+.radar-sweep-indicator {
+  border-radius: 100% 0 0 0 !important;
+}
+
+::selection {
+  background: var(--primary);
+  color: #fff;
+}
+
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--line-2);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #4a4d55;
+}
+
+.text-gradient {
+  color: var(--primary);
+  background: none;
+  -webkit-text-fill-color: currentColor;
+}
+
+/* Small uppercase monospace label, as used across the landing page. */
+.mono,
+.mono-label {
+  font-family: var(--font-mono) !important;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.mono-label {
+  color: var(--text-muted);
+}
+
+/* ---------- Panels ---------- */
+.glass-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.glass-panel:hover {
+  border-color: var(--line-2);
+  background: var(--bg-card);
+}
+
+/* ---------- Buttons ---------- */
+.interactive-btn {
+  background: transparent;
+  border: 1px solid var(--line-2);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.interactive-btn:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--text-secondary);
+  transform: none;
+}
+
+.interactive-btn:active {
+  background: var(--bg-card-active);
+  transform: none;
+}
+
+.interactive-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.interactive-btn.primary {
+  background: var(--text-primary);
+  border: 1px solid var(--text-primary);
+  color: var(--bg-base);
+  filter: none;
+}
+
+.interactive-btn.primary:hover {
+  background: #fff;
+  border-color: #fff;
+  filter: none;
+}
+
+.interactive-btn.accent {
+  background: transparent;
+  border: 1px solid var(--line-2);
+  color: var(--text-primary);
+  filter: none;
+}
+
+.interactive-btn.accent:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--text-secondary);
+  filter: none;
+}
+
+/* ---------- Inputs ---------- */
+input[type="text"],
+input[type="password"],
+input[type="number"],
+input[type="search"],
+input:not([type]),
+textarea,
+select,
+.input-recessed {
+  background: var(--bg-base) !important;
+  border: 1px solid var(--line-2) !important;
+  color: var(--text-primary) !important;
+  font-family: inherit;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--primary) !important;
+  outline: none;
+}
+
+input[type="checkbox"] {
+  accent-color: var(--primary);
+}
+
+/* ---------- App frame: header, sidebar, workspace ---------- */
+.app-container {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  animation: none;
+}
+
+.app-container.has-titlebar {
+  padding-top: 35px;
+}
+
+.app-container.has-titlebar .app-header {
+  border-top: 1px solid var(--line);
+}
+
+.titlebar-drag-region {
+  background: var(--bg-base);
+}
+
+.app-header {
+  height: 52px;
+  margin: 0;
+  border-bottom: 1px solid var(--line);
+  align-items: stretch;
+  flex-shrink: 0;
+}
+
+.app-header .logo-container {
+  padding: 0 18px;
+  border-right: 1px solid var(--line);
+  width: 220px;
+  flex-shrink: 0;
+}
+
+.app-header .logo-text {
+  font-family: var(--font-title);
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.app-header > div:last-child {
+  padding-right: 12px;
+}
+
+.connection-status-badge {
+  font-family: var(--font-mono) !important;
+  font-size: 10.5px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.08em;
+  background: transparent !important;
+  border: 1px solid var(--line-2);
+  padding: 5px 10px !important;
+}
+
+.app-main-layout {
+  gap: 0;
+}
+
+.sidebar-nav {
+  width: 220px;
+  padding: 0;
+  gap: 0;
+  border-right: 1px solid var(--line);
+}
+
+.sidebar-item {
+  padding: 14px 18px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  gap: 12px;
+}
+
+.sidebar-item .nav-num {
+  color: var(--text-muted);
+  min-width: 18px;
+}
+
+.sidebar-item:hover {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  transform: none;
+}
+
+.sidebar-item.active,
+.sidebar-item.active:hover {
+  background: var(--text-primary);
+  color: var(--bg-base);
+  border-color: var(--line);
+}
+
+.sidebar-item.active .nav-num {
+  color: var(--bg-base);
+  opacity: 0.55;
+}
+
+.workspace-content {
+  padding: 0;
+}
+
+/* Numbered bar at the top of every screen, like the landing page's sections. */
+.ws-bar {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--line);
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.ws-bar span:first-child {
+  color: var(--text-secondary);
+}
+
+.ws-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 24px;
+}
+
+/* ---------- Nearby / radar ---------- */
+.radar-wave-circle {
+  border-color: rgba(143, 123, 255, 0.22);
+}
+
+.radar-sweep-indicator {
+  border-right-color: rgba(143, 123, 255, 0.45);
+}
+
+.radar-center-pulse {
+  background: var(--primary);
+  color: #fff;
+}
+
+.floating-device-card {
+  background: var(--bg-card);
+  border: 1px solid var(--line-2);
+  animation: fadeInCard 0.4s ease forwards;
+}
+
+.device-card-avatar,
+.device-card-avatar.phone,
+.device-card-avatar.desktop,
+.device-card-avatar.tablet {
+  background: transparent;
+  border: 1px solid var(--line-2);
+}
+
+/* ---------- Dialogs, banners, toasts ---------- */
+.dialog-overlay {
+  background: rgba(10, 10, 12, 0.78);
+  backdrop-filter: none;
+}
+
+.dialog-content,
+.settings-modal-card {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--line-2) !important;
+}
+
+.update-banner {
+  background: var(--bg-card);
+  border: 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.weshare-toast {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--line-2) !important;
+  backdrop-filter: none !important;
+}
+
+/* ---------- Transfers & history ---------- */
+.progress-bar-container {
+  background: var(--line);
+}
+
+.progress-bar-fill {
+  background: var(--primary);
+}
+
+.history-item,
+.activity-card,
+.selected-file-card,
+.transfer-file-item,
+.device-item {
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+}
+
+.history-item:hover,
+.activity-card:hover,
+.device-item:hover {
+  border-color: var(--line-2);
+  transform: none;
+}
+
+.drag-zone,
+.drop-zone-dashed {
+  background: transparent;
+  border: 1px dashed var(--line-2);
+}
+
+.drag-zone.dragging,
+.drop-zone-active {
+  border-color: var(--primary);
+  background: rgba(143, 123, 255, 0.06);
+}
+
+.floating-active-transfer {
+  background: var(--bg-card);
+  border: 1px solid var(--line-2);
+  backdrop-filter: none;
+}
+
+.floating-active-progress-fill {
+  background: var(--primary);
+}
+
+.global-drag-overlay {
+  background: rgba(10, 10, 12, 0.88);
+  backdrop-filter: none;
+}
+
+/* ---------- Charts & small leftovers ---------- */
+.chart-bar-fill-primary { background: var(--primary); }
+.chart-bar-fill-secondary { background: var(--blue, #5b8cff); }
+.chart-bar-fill-tertiary { background: var(--accent); }
+.chart-bar-fill-other { background: var(--line-2); }
+
+.global-drag-overlay {
+  -webkit-backdrop-filter: none;
+}
+
+/* Two-part switch (e.g. Phone / Computer on the Receive screen). */
+.seg-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: transparent;
+  border: 0;
+  color: var(--text-secondary);
+  padding: 10px 14px;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: background 0.15s, color 0.15s;
+}
+.seg-tab + .seg-tab { border-left: 1px solid var(--line-2); }
+.seg-tab:hover { color: var(--text-primary); background: var(--bg-card-hover); }
+.seg-tab.active,
+.seg-tab.active:hover { background: var(--text-primary); color: var(--bg-base); }
+
+/* Square icon tile used beside titles. */
+.icon-tile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line-2);
+  background: transparent !important;
+  color: var(--text-primary) !important;
+}
+
+.floating-icon { animation: none; }
+.pairing-glow-card { background: var(--bg-card); border: 1px solid var(--line); }
+
+/* ---------- Phones ---------- */
+@media (max-width: 768px) {
+  .app-container { padding: 0; min-height: 100vh; height: auto; }
+  .app-header { height: 48px; }
+  .app-header .logo-container { width: auto; }
+  .app-main-layout { gap: 0; }
+  .sidebar-nav {
+    width: 100%;
+    flex-direction: row;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+    padding: 0;
+    overflow-x: auto;
+  }
+  .sidebar-item {
+    border-bottom: 0;
+    border-right: 1px solid var(--line);
+    padding: 12px 14px;
+    white-space: nowrap;
+    width: auto;
+  }
+  .ws-bar { padding: 12px 16px; }
+  .ws-bar span:last-child { display: none; }
+  .ws-body { padding: 16px; }
+}
+
+/* --------------------------------------------------------------------------
+   Grid lines: purple shades flowing along each line at an even speed.
+   A repeating gradient is slid along by one length animated on the page root,
+   so every line moves in step and the loop has no jump.
+   -------------------------------------------------------------------------- */
+@property --ws-line-shift {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
+
+:root {
+  animation: ws-line-flow 8s linear infinite;
+}
+
+@keyframes ws-line-flow {
+  to { --ws-line-shift: 600px; }
+}
+
+.app-header,
+.app-header .logo-container,
+.app-container.has-titlebar .app-header,
+.sidebar-nav,
+.sidebar-item,
+.ws-bar,
+.update-banner,
+.glass-panel,
+.pairing-glow-card,
+.device-item,
+.floating-device-card,
+.settings-modal-card,
+.icon-tile {
+  --ws-line-dir: 90deg;
+  border-image: repeating-linear-gradient(
+    var(--ws-line-dir),
+    #8f7bff calc(var(--ws-line-shift) + 0px),
+    #c4b5fd calc(var(--ws-line-shift) + 100px),
+    #6d28d9 calc(var(--ws-line-shift) + 200px),
+    #a855f7 calc(var(--ws-line-shift) + 300px),
+    #e9d5ff calc(var(--ws-line-shift) + 400px),
+    #7c3aed calc(var(--ws-line-shift) + 500px),
+    #8f7bff calc(var(--ws-line-shift) + 600px)
+  ) 1;
+}
+
+/* Upright lines flow downwards instead of across. */
+.sidebar-nav,
+.app-header .logo-container {
+  --ws-line-dir: 180deg;
+}
+
+/* The centre of the Nearby radar: a purple gradient that turns round.
+   It spins with transform, which the graphics card handles, so it stays smooth. */
+.radar-center-pulse {
+  overflow: hidden;
+  background: #6d28d9;
+}
+
+.radar-center-pulse::before {
+  content: '';
+  position: absolute;
+  inset: -20%;
+  background: conic-gradient(#8f7bff, #c4b5fd, #6d28d9, #a855f7, #e9d5ff, #7c3aed, #8f7bff);
+  animation: ws-radar-spin 6s linear infinite;
+  will-change: transform;
+}
+
+.radar-center-pulse > svg {
+  position: relative;
+  z-index: 1;
+  filter: drop-shadow(0 1px 2px rgba(30, 10, 60, 0.6));
+}
+
+@keyframes ws-radar-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { animation: none; }
+  .radar-center-pulse::before { animation: none; }
+}
+
+/* Text-style button (account screens) */
+.link-btn {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--primary-light);
+  cursor: pointer;
+  font: inherit;
+}
+.link-btn:hover { text-decoration: underline; }
+.link-btn:disabled { opacity: .5; cursor: default; }

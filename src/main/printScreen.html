@@ -1,0 +1,527 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src file: data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+<title>Print</title>
+<style>
+  :root {
+    --bg: #121316;
+    --card: #16171b;
+    --card-2: #1b1d22;
+    --line: #26282e;
+    --line-2: #33363d;
+    --text: #f2f1ee;
+    --text-2: #a3a29d;
+    --muted: #6f6e6a;
+    --primary: #8f7bff;
+    --primary-light: #a99bff;
+    --success: #4fcf8a;
+    --error: #f07a8a;
+    --sans: 'Inter', system-ui, 'Segoe UI', sans-serif;
+    --title: 'Archivo', system-ui, 'Segoe UI', sans-serif;
+    --mono: 'JetBrains Mono', 'Cascadia Mono', Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 13px; overflow: hidden; }
+  button, input, select { font: inherit; color: inherit; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--line-2); }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+  /* Flowing purple lines, as in the main window */
+  @property --ws-line-shift { syntax: '<length>'; inherits: true; initial-value: 0px; }
+  :root { animation: ws-line-flow 8s linear infinite; }
+  @keyframes ws-line-flow { to { --ws-line-shift: 600px; } }
+  .flow-line {
+    border-image: repeating-linear-gradient(var(--dir, 90deg),
+      #8f7bff calc(var(--ws-line-shift) + 0px), #c4b5fd calc(var(--ws-line-shift) + 100px),
+      #6d28d9 calc(var(--ws-line-shift) + 200px), #a855f7 calc(var(--ws-line-shift) + 300px),
+      #e9d5ff calc(var(--ws-line-shift) + 400px), #7c3aed calc(var(--ws-line-shift) + 500px),
+      #8f7bff calc(var(--ws-line-shift) + 600px)) 1;
+  }
+  @media (prefers-reduced-motion: reduce) { :root { animation: none; } }
+
+  .app { display: grid; grid-template-columns: 1fr 320px; grid-template-rows: 52px 1fr; height: 100vh; }
+  header {
+    grid-column: 1 / -1; display: flex; align-items: center; gap: 14px; padding: 0 20px;
+    border-bottom: 1px solid var(--line);
+  }
+  .mono-label { font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  header .name { font-family: var(--title); font-weight: 700; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  header .count { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--text-2); white-space: nowrap; }
+
+  /* Preview */
+  .preview { overflow: auto; padding: 28px; display: flex; flex-direction: column; align-items: center; gap: 22px; background: #0d0e11; }
+  .page-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; }
+  .paper {
+    background: #fff; width: min(100%, 560px); box-shadow: 0 10px 30px rgba(0,0,0,.45);
+    display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative;
+  }
+  .paper img { width: 100%; height: 100%; display: block; }
+  .paper.bw img { filter: grayscale(1); }
+  .page-wrap.skipped .paper { opacity: .25; }
+  .page-wrap .label { font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em; color: var(--muted); text-transform: uppercase; }
+  .page-wrap.skipped .label::after { content: ' · not printed'; color: var(--error); }
+  .placeholder { color: var(--muted); font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+  .spinner { width: 22px; height: 22px; border: 2px solid var(--line-2); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 10px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .center-msg { margin: auto; text-align: center; max-width: 360px; line-height: 1.55; color: var(--text-2); }
+  .center-msg.error { color: var(--error); }
+
+  /* Settings */
+  aside {
+    border-left: 1px solid var(--line); --dir: 180deg;
+    display: flex; flex-direction: column; min-height: 0;
+  }
+  .settings { flex: 1; overflow: auto; padding: 18px 20px; display: flex; flex-direction: column; gap: 18px; }
+  .field { display: flex; flex-direction: column; gap: 8px; }
+  select, input[type=text] {
+    width: 100%; background: var(--card); border: 1px solid var(--line-2); padding: 9px 10px; outline: none; border-radius: 0;
+  }
+  select:focus, input[type=text]:focus { border-color: var(--primary); }
+  select option { background: var(--card); }
+  .seg { display: flex; border: 1px solid var(--line-2); }
+  .seg button {
+    flex: 1; background: transparent; border: 0; padding: 8px 6px; cursor: pointer; color: var(--text-2);
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase;
+  }
+  .seg button + button { border-left: 1px solid var(--line-2); }
+  .seg button.active { background: var(--text); color: var(--bg); }
+  .stepper { display: flex; border: 1px solid var(--line-2); width: 140px; }
+  .stepper button { width: 40px; background: transparent; border: 0; cursor: pointer; font-size: 16px; color: var(--text-2); }
+  .stepper button:hover { color: var(--text); background: var(--card-2); }
+  .stepper input { width: 60px; text-align: center; border: 0; border-left: 1px solid var(--line-2); border-right: 1px solid var(--line-2); background: var(--card); padding: 8px 0; outline: none; font-family: var(--mono); }
+  .hint { font-size: 11.5px; color: var(--muted); line-height: 1.45; }
+  .hint.error { color: var(--error); }
+  .hidden { display: none !important; }
+
+  .actions { border-top: 1px solid var(--line); padding: 16px 20px 18px; display: flex; flex-direction: column; gap: 10px; }
+  .summary { font-family: var(--mono); font-size: 11px; color: var(--text-2); letter-spacing: .04em; }
+  .btn-row { display: flex; gap: 8px; }
+  .btn {
+    flex: 1; padding: 11px 12px; border: 1px solid var(--line-2); background: transparent; cursor: pointer;
+    font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
+  }
+  .btn:hover { border-color: var(--muted); }
+  .btn.primary { background: var(--text); color: var(--bg); border-color: var(--text); font-weight: 700; flex: 2; }
+  .btn.primary:hover { background: #fff; }
+  .btn:disabled { opacity: .4; cursor: default; }
+  .link { background: none; border: 0; padding: 0; color: var(--primary-light); cursor: pointer; font-size: 11.5px; text-align: left; }
+  .link:hover { text-decoration: underline; }
+  .status { font-size: 12px; line-height: 1.45; min-height: 17px; }
+  .status.ok { color: var(--success); }
+  .status.error { color: var(--error); }
+
+  /* What actually goes to the printer: only the chosen pages, one per sheet. */
+  #print-root { display: none; }
+  @media print {
+    @page { margin: 0; }
+    html, body { background: #fff; height: auto; overflow: visible; }
+    .app { display: none !important; }
+    #print-root { display: block; }
+    .sheet { display: flex; align-items: center; justify-content: center; overflow: hidden; break-after: page; page-break-after: always; }
+    .sheet:last-child { break-after: auto; page-break-after: auto; }
+    .sheet img { display: block; }
+    #print-root.bw img { filter: grayscale(1); }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="flow-line">
+    <span class="mono-label">Print</span>
+    <span class="name" id="file-name"></span>
+    <span class="count" id="page-count"></span>
+  </header>
+
+  <main class="preview" id="preview">
+    <div class="center-msg"><div class="spinner"></div>Getting the pages ready…</div>
+  </main>
+
+  <aside class="flow-line">
+    <div class="settings">
+      <div class="field">
+        <span class="mono-label">Printer</span>
+        <select id="printer"><option>Looking for printers…</option></select>
+      </div>
+
+      <div class="field">
+        <span class="mono-label">Copies</span>
+        <div class="stepper">
+          <button type="button" id="copies-down" aria-label="Fewer copies">−</button>
+          <input id="copies" type="text" inputmode="numeric" value="1" aria-label="Copies">
+          <button type="button" id="copies-up" aria-label="More copies">+</button>
+        </div>
+      </div>
+
+      <div class="field hidden" id="pages-field">
+        <span class="mono-label">Pages</span>
+        <div class="seg" data-setting="range">
+          <button type="button" data-value="all" class="active">All</button>
+          <button type="button" data-value="custom">Choose</button>
+        </div>
+        <input id="custom-range" type="text" class="hidden" placeholder="e.g. 1-3, 5" aria-label="Pages to print">
+        <span class="hint" id="range-hint"></span>
+      </div>
+
+      <div class="field">
+        <span class="mono-label">Colour</span>
+        <div class="seg" data-setting="color">
+          <button type="button" data-value="color" class="active">Colour</button>
+          <button type="button" data-value="bw">Black &amp; white</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <span class="mono-label">Layout</span>
+        <div class="seg" data-setting="orientation">
+          <button type="button" data-value="portrait" class="active">Portrait</button>
+          <button type="button" data-value="landscape">Landscape</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <span class="mono-label">Paper</span>
+        <select id="paper">
+          <option value="A4">A4</option>
+          <option value="A3">A3</option>
+          <option value="A5">A5</option>
+          <option value="Letter">Letter</option>
+          <option value="Legal">Legal</option>
+        </select>
+      </div>
+
+      <div class="field hidden" id="fit-field">
+        <span class="mono-label">Picture size</span>
+        <div class="seg" data-setting="fit">
+          <button type="button" data-value="contain" class="active">Fit page</button>
+          <button type="button" data-value="cover">Fill page</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <span class="mono-label">Two-sided</span>
+        <select id="duplex">
+          <option value="simplex">Off · one side</option>
+          <option value="longEdge">On · flip on long edge</option>
+          <option value="shortEdge">On · flip on short edge</option>
+        </select>
+        <span class="hint">Only works if the printer can print on both sides.</span>
+      </div>
+    </div>
+
+    <div class="actions flow-line">
+      <span class="summary" id="summary"></span>
+      <span class="status" id="status" role="status"></span>
+      <div class="btn-row">
+        <button type="button" class="btn" id="cancel">Cancel</button>
+        <button type="button" class="btn primary" id="print" disabled>Print</button>
+      </div>
+      <button type="button" class="link" id="system-dialog">Use the Windows print window instead</button>
+    </div>
+  </aside>
+</div>
+
+<div id="print-root"></div>
+
+<script>
+(() => {
+  const api = window.weshareprint;
+  const $ = (id) => document.getElementById(id);
+
+  // Paper sizes in millimetres (portrait).
+  const PAPER = { A4: [210, 297], A3: [297, 420], A5: [148, 210], Letter: [215.9, 279.4], Legal: [215.9, 355.6] };
+  const PICTURE_MARGIN_MM = 6;
+
+  const remembered = (() => { try { return JSON.parse(localStorage.getItem('weshare-print') || '{}'); } catch (e) { return {}; } })();
+  const remember = () => {
+    try { localStorage.setItem('weshare-print', JSON.stringify({ printer: state.printer, paper: state.paper, color: state.color })); } catch (e) {}
+  };
+
+  const state = {
+    printer: '',
+    copies: 1,
+    range: 'all',
+    color: remembered.color === 'bw' ? 'bw' : 'color',
+    orientation: null,
+    paper: PAPER[remembered.paper] ? remembered.paper : 'A4',
+    fit: 'contain',
+    duplex: 'simplex',
+    busy: false
+  };
+  let job = null;
+  let printers = [];
+
+  // ---- Pages to print ----
+  const parseRange = (text, total) => {
+    const picked = new Set();
+    const parts = text.split(/[,;\s]+/).filter(Boolean);
+    if (!parts.length) return { error: 'Type the pages, for example 1-3, 5' };
+    for (const part of parts) {
+      const m = part.match(/^(\d+)(?:-(\d*))?$/);
+      if (!m) return { error: `"${part}" isn't a page number.` };
+      const from = Number(m[1]);
+      const to = m[2] === undefined ? from : (m[2] === '' ? total : Number(m[2]));
+      if (from < 1 || to < from) return { error: `"${part}" isn't a page range.` };
+      if (from > total) return { error: `There are only ${total} pages.` };
+      for (let i = from; i <= Math.min(to, total); i++) picked.add(i - 1);
+    }
+    return { pages: [...picked].sort((a, b) => a - b) };
+  };
+
+  const chosenPages = () => {
+    if (!job) return { pages: [] };
+    const all = job.pages.map((_, i) => i);
+    if (state.range !== 'custom' || job.pages.length < 2) return { pages: all };
+    return parseRange($('custom-range').value, job.pages.length);
+  };
+
+  const paperMm = () => {
+    const [w, h] = PAPER[state.paper];
+    return state.orientation === 'landscape' ? [h, w] : [w, h];
+  };
+
+  // ---- Preview ----
+  const renderPreview = () => {
+    const preview = $('preview');
+    if (!job) return;
+    if (job.error && job.pages.length === 0) {
+      preview.innerHTML = '';
+      const msg = document.createElement('div');
+      msg.className = 'center-msg error';
+      msg.textContent = job.error;
+      preview.appendChild(msg);
+      return;
+    }
+    if (job.pages.length === 0) return;
+
+    const [pw, ph] = paperMm();
+    const margin = job.kind === 'image' ? PICTURE_MARGIN_MM : 0;
+    const chosen = new Set(chosenPages().pages || []);
+
+    preview.innerHTML = '';
+    job.pages.forEach((page, i) => {
+      const wrap = document.createElement('div');
+      wrap.className = 'page-wrap' + (chosen.has(i) ? '' : ' skipped');
+      const paper = document.createElement('div');
+      paper.className = 'paper' + (state.color === 'bw' ? ' bw' : '');
+      paper.style.aspectRatio = `${pw} / ${ph}`;
+      paper.style.padding = `${(margin / pw) * 100}%`;
+      const img = document.createElement('img');
+      img.src = page.src;
+      img.alt = `Page ${i + 1}`;
+      img.style.objectFit = job.kind === 'image' ? state.fit : 'contain';
+      paper.appendChild(img);
+      const label = document.createElement('span');
+      label.className = 'label';
+      label.textContent = `Page ${i + 1}`;
+      wrap.append(paper, label);
+      preview.appendChild(wrap);
+    });
+
+    if (!job.done) {
+      const more = document.createElement('div');
+      more.className = 'placeholder';
+      more.textContent = `Getting page ${job.pages.length + 1} of ${job.total || '…'} ready…`;
+      preview.appendChild(more);
+    }
+  };
+
+  const renderSettings = () => {
+    if (!job) return;
+    $('file-name').textContent = job.name;
+    document.title = `Print · ${job.name}`;
+    const total = job.done ? job.pages.length : job.total;
+    $('page-count').textContent = total ? `${total} page${total === 1 ? '' : 's'}` : '';
+    $('pages-field').classList.toggle('hidden', !(job.kind === 'pdf' && (job.total > 1 || job.pages.length > 1)));
+    $('fit-field').classList.toggle('hidden', job.kind !== 'image');
+    $('custom-range').classList.toggle('hidden', state.range !== 'custom');
+
+    document.querySelectorAll('.seg').forEach((seg) => {
+      const key = seg.dataset.setting;
+      seg.querySelectorAll('button').forEach((b) => b.classList.toggle('active', state[key] === b.dataset.value));
+    });
+    $('paper').value = state.paper;
+    $('copies').value = String(state.copies);
+
+    const pick = chosenPages();
+    $('range-hint').textContent = state.range === 'custom' && pick.error ? pick.error : '';
+    $('range-hint').classList.toggle('error', !!pick.error);
+    const sheets = (pick.pages || []).length;
+    const sides = state.duplex === 'simplex' ? sheets : Math.ceil(sheets / 2);
+    $('summary').textContent = sheets
+      ? `${sheets} page${sheets === 1 ? '' : 's'} × ${state.copies} cop${state.copies === 1 ? 'y' : 'ies'} · ${sides * state.copies} sheet${sides * state.copies === 1 ? '' : 's'}`
+      : '';
+
+    const ready = job.done && !job.error && sheets > 0 && !state.busy;
+    $('print').disabled = !ready || !state.printer;
+    $('system-dialog').disabled = !ready;
+  };
+
+  const render = () => { renderSettings(); renderPreview(); };
+
+  // The layout starts as the first page's own shape (a wide picture prints landscape).
+  const pickOrientation = () => {
+    if (state.orientation || !job || !job.pages.length) return;
+    const first = job.pages[0];
+    if (first.width && first.height) {
+      state.orientation = first.width > first.height ? 'landscape' : 'portrait';
+      render();
+    } else {
+      const probe = new Image();
+      probe.onload = () => {
+        first.width = probe.naturalWidth;
+        first.height = probe.naturalHeight;
+        state.orientation = first.width > first.height ? 'landscape' : 'portrait';
+        render();
+      };
+      probe.onerror = () => {
+        job.error = 'Weshare couldn\'t show this picture. Use Edit to open it in another app and print from there.';
+        job.pages = [];
+        render();
+      };
+      probe.src = first.src;
+    }
+  };
+
+  // ---- Printing ----
+  const buildPrintRoot = (pages) => {
+    const root = $('print-root');
+    root.innerHTML = '';
+    root.className = state.color === 'bw' ? 'bw' : '';
+    const [pw, ph] = paperMm();
+    const margin = job.kind === 'image' ? PICTURE_MARGIN_MM : 0;
+    const loads = [];
+    for (const i of pages) {
+      const sheet = document.createElement('div');
+      sheet.className = 'sheet';
+      // A hair under the paper size so a page never spills onto a blank extra sheet.
+      sheet.style.width = `${pw}mm`;
+      sheet.style.height = `${ph - 0.6}mm`;
+      sheet.style.padding = `${margin}mm`;
+      const img = document.createElement('img');
+      img.src = job.pages[i].src;
+      img.style.width = `${pw - margin * 2}mm`;
+      img.style.height = `${ph - 0.6 - margin * 2}mm`;
+      img.style.objectFit = job.kind === 'image' ? state.fit : 'contain';
+      sheet.appendChild(img);
+      root.appendChild(sheet);
+      loads.push(img.decode().catch(() => {}));
+    }
+    return Promise.all(loads);
+  };
+
+  const setStatus = (text, kind) => {
+    const s = $('status');
+    s.textContent = text;
+    s.className = 'status' + (kind ? ' ' + kind : '');
+  };
+
+  const doPrint = async (system) => {
+    const pick = chosenPages();
+    if (!pick.pages || !pick.pages.length || state.busy) return;
+    state.busy = true;
+    render();
+    setStatus(system ? 'Opening the Windows print window…' : 'Sending to the printer…');
+    await buildPrintRoot(pick.pages);
+    remember();
+    const printerName = (printers.find((p) => p.name === state.printer) || {}).displayName || state.printer;
+    const result = await api.print({
+      system,
+      deviceName: state.printer,
+      copies: state.copies,
+      color: state.color === 'color',
+      landscape: state.orientation === 'landscape',
+      pageSize: state.paper,
+      duplexMode: state.duplex
+    });
+    state.busy = false;
+    if (result && result.ok) {
+      setStatus(system ? 'Sent to the printer.' : `Sent to ${printerName}.`, 'ok');
+      render();
+      setTimeout(() => api.close(), 1400);
+    } else {
+      const reason = (result && result.reason) || '';
+      if (/cancel/i.test(reason)) setStatus('');
+      else setStatus(`Didn't print${reason ? ` (${reason})` : ''}. Check the printer is on and try again.`, 'error');
+      render();
+    }
+  };
+
+  // ---- Controls ----
+  document.querySelectorAll('.seg').forEach((seg) => {
+    seg.addEventListener('click', (e) => {
+      const b = e.target.closest('button');
+      if (!b) return;
+      state[seg.dataset.setting] = b.dataset.value;
+      if (seg.dataset.setting === 'range' && b.dataset.value === 'custom') setTimeout(() => $('custom-range').focus(), 0);
+      render();
+    });
+  });
+  $('custom-range').addEventListener('input', render);
+  $('paper').addEventListener('change', (e) => { state.paper = e.target.value; render(); });
+  $('duplex').addEventListener('change', (e) => { state.duplex = e.target.value; render(); });
+  $('printer').addEventListener('change', (e) => { state.printer = e.target.value; render(); });
+  const setCopies = (n) => { state.copies = Math.min(99, Math.max(1, Math.round(n) || 1)); render(); };
+  $('copies-down').addEventListener('click', () => setCopies(state.copies - 1));
+  $('copies-up').addEventListener('click', () => setCopies(state.copies + 1));
+  $('copies').addEventListener('change', (e) => setCopies(Number(e.target.value.replace(/\D/g, ''))));
+  $('print').addEventListener('click', () => doPrint(false));
+  $('system-dialog').addEventListener('click', () => doPrint(true));
+  $('cancel').addEventListener('click', () => api.close());
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') api.close();
+    if (e.key === 'Enter' && document.activeElement?.tagName !== 'SELECT' && !$('print').disabled) doPrint(false);
+  });
+
+  // ---- Start ----
+  const loadPrinters = async () => {
+    printers = await api.getPrinters();
+    const select = $('printer');
+    select.innerHTML = '';
+    if (!printers.length) {
+      const o = document.createElement('option');
+      o.textContent = 'No printers found';
+      o.value = '';
+      select.appendChild(o);
+      state.printer = '';
+    } else {
+      for (const p of printers) {
+        const o = document.createElement('option');
+        o.value = p.name;
+        o.textContent = p.displayName + (p.isDefault ? '  (default)' : '');
+        select.appendChild(o);
+      }
+      const saved = printers.find((p) => p.name === remembered.printer);
+      const def = printers.find((p) => p.isDefault);
+      const real = printers.find((p) => !/pdf|xps|onenote|fax/i.test(p.name));
+      state.printer = (saved || def || real || printers[0]).name;
+      select.value = state.printer;
+    }
+    render();
+  };
+
+  api.onUpdate((updated) => {
+    job = updated;
+    pickOrientation();
+    render();
+  });
+
+  api.getJob().then((j) => {
+    job = j;
+    if (!job) return;
+    pickOrientation();
+    render();
+  });
+  loadPrinters();
+
+  // Used by Weshare's own tests to lay out the printed pages without a printer.
+  window.__weshareBuildPrintPages = () => buildPrintRoot(chosenPages().pages || []);
+  window.__weshareState = state;
+})();
+</script>
+</body>
+</html>
